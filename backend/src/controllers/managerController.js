@@ -79,8 +79,9 @@ const approveLeaveRequest = async (req, res) => {
     balance.used += request.days;
     await balance.save();
 
-    request.status = 'approved';
+        request.status = 'approved';
     request.reviewedBy = req.user.id;
+    request.managerComment = req.body.managerComment || '';
     await request.save();
 
     return success(res, 200, 'Leave request approved', request);
@@ -106,8 +107,9 @@ const rejectLeaveRequest = async (req, res) => {
       return error(res, 400, 'Only pending requests can be rejected');
     }
 
-    request.status = 'rejected';
+        request.status = 'rejected';
     request.reviewedBy = req.user.id;
+    request.managerComment = req.body.managerComment || '';
     await request.save();
 
     return success(res, 200, 'Leave request rejected', request);

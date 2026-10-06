@@ -14,6 +14,7 @@ const leaveRequestSchema = new mongoose.Schema(
       default: 'pending',
     },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        managerComment: { type: String, trim: true, default: '' },
   },
   { timestamps: true }
 );
