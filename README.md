@@ -2,118 +2,260 @@
 
 ## Overview
 
-The Employee Leave Management System is a web application designed to help organizations manage employee leave requests efficiently.
+The Employee Leave Management System is a web-based application designed to simplify and manage employee leave requests within an organization.
 
-Employees can request leave, view their leave status and track their available leave balance. Administrators can review leave requests, approve or reject them, and manage employee leave records.
+The system allows employees to request leave, view their leave history and leave balance, while managers can review, approve, or reject requests from employees under their supervision.
+
+Administrators have system-wide access to manage users, assign managers, manage user roles, and oversee leave requests.
+
+The project consists of a frontend application and a backend API that work together to provide a complete leave management workflow.
+
+---
 
 ## Features
 
-### Employee
+- User authentication and authorization
+- Role-based access control
+- Employee leave request submission
+- Leave request tracking
+- Leave request cancellation
+- Leave balance management
+- Manager approval and rejection of leave requests
+- Admin user management
+- Manager assignment
+- User role management
+- Leave status tracking
+- Validation of leave requests
+- Prevention of overlapping leave requests
+- Automatic leave balance deduction after approval
+- Team-based leave request management
+- RESTful API integration
+- Responsive user interface
 
-- Register and log in
-- View employee dashboard
-- Request leave
-- View submitted leave requests
-- Check leave request status
-- View leave balance
+---
 
-### Admin
+# User Roles
 
-- Admin login
-- View employee leave requests
-- Approve leave requests
-- Reject leave requests
-- Track employee leave balances
-- Manage leave records
-
-## Technologies Used
-
-### Frontend
-
-- React
-- TypeScript
-- Vite
-
-### Backend
-
-- Node.js
-- Express.js
-
-### Other Tools
-
-- Git
-- GitHub
-- Visual Studio Code
-
-## User Roles
+The system has three main user roles:
 
 ### Employee
 
-Employees can submit leave requests and monitor their leave status and balance.
+Employees can:
+
+- Log in to their account.
+- Access their personal dashboard.
+- Submit leave requests.
+- Select a leave type.
+- Enter start and end dates.
+- Provide a reason for the leave.
+- View their own leave requests.
+- Filter leave requests by status.
+- Track the status of their requests.
+- Cancel pending leave requests.
+- View their leave balance.
+- View allocated, used, and remaining leave days.
+
+### Manager
+
+Managers can:
+
+- Access the manager dashboard.
+- View leave requests from employees assigned to them.
+- Filter requests by status.
+- View leave request details.
+- Approve pending leave requests.
+- Reject pending leave requests.
+- Monitor leave requests from their team.
 
 ### Admin
 
-Administrators can manage employee leave requests, approve or reject requests, and track leave balances.
+Administrators have system-wide access.
 
-## Project Structure
+Admins can:
 
-Employee-Leave-Management/
-├── Backend/
-├── Frontend/
-└── README.md
+- Access the admin dashboard.
+- View all registered users.
+- View employee and manager information.
+- Assign managers to employees.
+- Change user roles.
+- View and manage leave requests.
+- Approve or reject leave requests.
+- Manage users across the system.
+- Oversee the overall leave management system.
 
-## Getting Started
+---
 
-### Prerequisites
+# Frontend
 
-Make sure you have the following installed:
+The frontend provides the user interface through which Employees, Managers, and Administrators interact with the system.
 
-- Node.js
-- Git
-- Visual Studio Code
+The interface is role-based, meaning that users see features and pages according to their assigned role.
 
-### Clone the Repository
+## Frontend Features
 
-git clone https://github.com/Bam11/Employee-Leave-Management.git
+### Authentication
 
-### Frontend Setup
+- Login interface
+- User authentication
+- Role-based access
+- Protected pages and dashboards
 
-Navigate into the Frontend folder:
+### Employee Interface
 
-cd Frontend
+The Employee dashboard allows employees to:
 
-Install the dependencies:
+- View their leave balance.
+- Submit leave requests.
+- View leave request history.
+- Track request status.
+- Cancel pending requests.
+- View leave information.
 
-npm install
+### Manager Interface
 
-Start the development server:
+The Manager dashboard allows managers to:
 
-npm run dev
+- View their team's leave requests.
+- Filter requests by status.
+- View request details.
+- Approve requests.
+- Reject requests.
+- Monitor team leave activity.
 
-### Backend Setup
+### Admin Interface
 
-Open another terminal and navigate to the Backend folder:
+The Admin dashboard allows administrators to:
 
-cd Backend
+- View all users.
+- Manage users.
+- Assign managers.
+- Change user roles.
+- View leave requests.
+- Approve or reject requests.
+- Manage the overall system.
 
-Install the backend dependencies:
+## Frontend Pages
 
-npm install
+The frontend includes role-specific pages such as:
 
-Start the backend server using the project's configured start command.
+- Login / Authentication
+- Employee Dashboard
+- Manager Dashboard
+- Admin Dashboard
+- Leave Request Page
+- Leave Request History
+- Leave Balance
+- Team Leave Requests
+- User Management
+- Manager Assignment
+- Role Management
 
-## Project Status
+---
 
-The project is currently under development.
+# Backend
 
-The frontend and backend are being developed and integrated to create a complete Employee Leave Management System.
+The backend handles the application's business logic, authentication, authorization, API requests, leave management, user management, validation, and database operations.
 
-## Contributors
+The backend exposes RESTful API endpoints that allow the frontend to communicate with the system.
 
-This project is being developed as a team project.
+---
 
-Each team member is responsible for different parts of the frontend and backend development.
+## Employee API
 
-## License
+### Employee Capabilities
 
-This project is created for educational purposes.
+Employees can:
+
+- Submit leave requests.
+- View their own leave requests.
+- Filter their requests by status.
+- Cancel pending requests.
+- View their leave balances.
+
+| Method | Endpoint                  | Auth     | Purpose                                                                     |
+| ------ | ------------------------- | -------- | --------------------------------------------------------------------------- |
+| POST   | `/api/leave-requests`     | Any user | Submit a leave request. Body: `leaveType`, `startDate`, `endDate`, `reason` |
+| GET    | `/api/leave-requests/me`  | Employee | View own leave requests. Query: `status`, `page`, `limit`                   |
+| DELETE | `/api/leave-requests/:id` | Owner    | Cancel a pending request                                                    |
+| GET    | `/api/leave-balance/me`   | Employee | View own leave balances including allocated, used, and remaining days       |
+
+---
+
+## Manager API
+
+### Manager Capabilities
+
+Managers can:
+
+- View leave requests from their team.
+- Filter requests by status.
+- View leave request details.
+- Approve pending requests.
+- Reject pending requests.
+
+Managers can only approve or reject requests submitted by employees who report directly to them.
+
+| Method | Endpoint                                  | Auth           | Purpose                                                                            |
+| ------ | ----------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |
+| GET    | `/api/manager/leave-requests`             | Manager, Admin | View own team's requests. Query: `status`, `page`, `limit`                         |
+| PUT    | `/api/manager/leave-requests/:id/approve` | Manager, Admin | Approve a pending request and deduct the approved days from the employee's balance |
+| PUT    | `/api/manager/leave-requests/:id/reject`  | Manager, Admin | Reject a pending request                                                           |
+
+---
+
+## Admin API
+
+### Admin Capabilities
+
+Administrators have system-wide access and can:
+
+- View all registered users.
+- Assign managers to employees.
+- Change user roles.
+- Manage users.
+- Approve or reject leave requests.
+- Act on leave requests regardless of the employee's assigned manager.
+
+| Method | Endpoint                              | Auth  | Purpose                                                                |
+| ------ | ------------------------------------- | ----- | ---------------------------------------------------------------------- |
+| GET    | `/api/admin/users`                    | Admin | List all users                                                         |
+| PUT    | `/api/admin/users/:id/assign-manager` | Admin | Assign a manager to an employee. Body: `managerId`                     |
+| PUT    | `/api/admin/users/:id/role`           | Admin | Change a user's role. Body: `role` (`employee`, `manager`, or `admin`) |
+
+---
+
+# Frontend and Backend Integration
+
+The frontend communicates with the backend through RESTful API endpoints.
+
+```text
+                    USER
+                     │
+                     ▼
+                FRONTEND
+                     │
+                     │ HTTP Request
+                     ▼
+                BACKEND API
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+          ▼                     ▼
+   Business Logic          Authentication
+          │                     │
+          └──────────┬──────────┘
+                     ▼
+                 DATABASE
+                     │
+                     │ Response
+                     ▼
+                BACKEND API
+                     │
+                     │ JSON Response
+                     ▼
+                FRONTEND
+                     │
+                     ▼
+
+               USER INTERFACE
+```
