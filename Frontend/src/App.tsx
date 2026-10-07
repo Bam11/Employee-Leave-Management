@@ -1,6 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { homePath } from './lib/data';
+import { Routes, Route } from 'react-router';
+import { AuthProvider } from './context/AuthContext';
 import Login from './pages/login';
 import Signup from './pages/signup';
 import Layout from './components/layout';
@@ -15,24 +14,17 @@ import CompanyOverview from './pages/admin/company-overview';
 import Users from './pages/admin/users';
 import { Policies } from './pages/admin/policies';
 import { Reports } from './pages/admin/report';
+import NotFound from './pages/NotFound';
 
-
-function RoleRedirect() {
-  const { user } = useAuth()
-  return <Navigate to={user ? homePath[user.role] : '/login'} replace />
-}
 function App() {
-
   return (
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route element={<Layout />}>
-          <Route element={<ProtectedRoutes allowed={['employee']} />}>
+          <Route element={<ProtectedRoutes allowed={['employee', 'manager', 'admin']} />}>
             <Route path="/dashboard" element={<EmployeeDashboard />} />
-          </Route>
-          <Route element={<ProtectedRoutes allowed={['employee', 'manager']} />}>
             <Route path="/apply" element={<ApplyLeave />} />
             <Route path="/history" element={<History />} />
           </Route>
@@ -47,7 +39,7 @@ function App() {
             <Route path="/policies" element={<Policies />} />
             <Route path="/reports" element={<Reports />} />
           </Route>
-          <Route path="*" element={<RoleRedirect />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </AuthProvider>

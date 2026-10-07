@@ -3,13 +3,26 @@ import { initials, useAuth } from '../context/AuthContext'
 import { roleLabel } from '../lib/data'
 
 const badgeStyle: Record<string, string> = {
-  Pending: 'bg-pendBg text-pend', 'On leave': 'bg-pendBg text-pend',
-  Approved: 'bg-okBg text-ok', 'In office': 'bg-okBg text-ok',
+  Pending: 'bg-pendBg text-pend',
+  pending: 'bg-pendBg text-pend',
+  'On leave': 'bg-pendBg text-pend',
+  Approved: 'bg-okBg text-ok',
+  approved: 'bg-okBg text-ok',
+  'In office': 'bg-okBg text-ok',
   Rejected: 'bg-noBg text-no',
+  rejected: 'bg-noBg text-no',
+  Cancelled: 'bg-noBg text-no',
+  cancelled: 'bg-noBg text-no',
 }
-export const Badge = ({ label }: { label: string }) => (
-  <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${badgeStyle[label]}`}>{label}</span>
-)
+export const Badge = ({ label }: { label: string }) => {
+  const formatted = label ? label.charAt(0).toUpperCase() + label.slice(1) : ''
+  const cls = badgeStyle[label] || badgeStyle[formatted] || 'bg-line text-ink'
+  return (
+    <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${cls}`}>
+      {formatted}
+    </span>
+  )
+}
 
 type Variant = 'primary' | 'ghost' | 'ok' | 'no'
 const variants: Record<Variant, string> = {

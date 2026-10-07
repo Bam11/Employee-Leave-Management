@@ -1,74 +1,190 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
-} from "react"
+} from 'react'
+import api from '../api/axios'
 import type { Role } from '../lib/data'
 
-export interface Account {
+export interface User {
+  id: string
+  _id?: string
   name: string
   email: string
-  password: string
   role: Role
+  manager?: { _id: string; name: string; email: string } | string
 }
 
-export const initials = (name: string): string =>
-  name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
-
-
-const seed: Account[] = [
-  { name: 'Amara Okafor', email: 'amara@leavedesk.com', password: 'amara123', role: 'employee' },
-  { name: 'Tunde Bello', email: 'tunde@leavedesk.com', password: 'tunde123', role: 'manager' },
-  { name: 'Ifeoma Nwosu', email: 'ifeoma@leavedesk.com', password: 'ifeoma123', role: 'admin' },
-]
-const KEY = 'leavedesk-accounts'
-
-function load(): Account[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? JSON.parse(raw) : seed
-  } catch {
-    return seed
+interface AuthResponse {
+  success: boolean
+  message: string
+  data: {
+    token: string
+    user: User
   }
 }
 
-interface Auth {
-  user: Account | null
-  signup: (a: Account) => string | null
-  login: (email: string, password: string) => Account | string
+interface MeResponse {
+  success: boolean
+  message: string
+  data: User
+}
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  login: (email: string, password: string) => Promise<string | null>
+  signup: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<string | null>
   logout: () => void
 }
 
-const AuthContext = createContext<Auth | null>(null)
+const AuthContext = createContext<AuthContextType | null>(null)
+
+const normalizeUser = (u: any): User => ({
+  ...u,
+  id: u.id || u._id || '',
+  _id: u._id || u.id || '',
+})
+
+export const initials = (name: string): string =>
+  (name || '')
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'U'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accounts, setAccounts] = useState<Account[]>(load)
-  const [user, setUser] = useState<Account | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const stored = localStorage.getItem('user')
+      return stored ? normalizeUser(JSON.parse(stored)) : null
+    } catch {
+      return null
+    }
+  })
 
-  const signup = (a: Account) => {
-    const email = a.email.trim().toLowerCase()
-    if (accounts.some((x) => x.email === email)) return 'An account with this email already exists.'
-    const next = [...accounts, { ...a, email }]
-    setAccounts(next)
-    try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
-    return null
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await api.get<MeResponse>('/auth/me')
+        const normalized = normalizeUser(response.data.data)
+
+        setUser(normalized)
+        localStorage.setItem('user', JSON.stringify(normalized))
+      } catch {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    restoreSession()
+  }, [])
+
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<string | null> => {
+    try {
+      const response = await api.post<AuthResponse>('/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+      })
+
+      const { token, user: rawUser } = response.data.data
+      const user = normalizeUser(rawUser)
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+
+      setUser(user)
+
+      return null
+    } catch (error: any) {
+      return (
+        error.response?.data?.message ||
+        'Unable to log in. Please try again.'
+      )
+    }
   }
 
-  const login = (email: string, password: string) => {
-    const found = accounts.find((x) => x.email === email.trim().toLowerCase() && x.password === password)
-    if (!found) return 'Email or password is not correct.'
-    setUser(found)
-    return found
+  const signup = async (
+    name: string,
+    email: string,
+    password: string
+  ): Promise<string | null> => {
+    try {
+      const response = await api.post<AuthResponse>('/auth/register', {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      })
+
+      const { token, user: rawUser } = response.data.data
+      const user = normalizeUser(rawUser)
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+
+      setUser(user)
+
+      return null
+    } catch (error: any) {
+      return (
+        error.response?.data?.message ||
+        'Unable to create account. Please try again.'
+      )
+    }
   }
 
-  const logout = () => setUser(null)
+  const logout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setUser(null)
+  }
 
-  return <AuthContext.Provider value={{ user, signup, login, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
-  return ctx
+  const context = useContext(AuthContext)
+
+  if (!context) {
+    throw new Error(
+      'useAuth must be used inside AuthProvider'
+    )
+  }
+
+  return context
 }
